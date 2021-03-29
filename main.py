@@ -4,12 +4,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from text_message import *
 
 
-bot = vk_api.VkApi(token=TOKEN)  # Доработать момент с токеном
-longpolling = VkLongPoll(bot)
-
-
 def send_msg(user_id: int, message_text, keyboard=None, attachment=None):    # Функция посылающая сообщение
-
     bot.method('messages.send', {'user_id': user_id,
                                  'attachment': attachment,
                                  'message': message_text,
@@ -24,6 +19,13 @@ def keyboard_create(keyboard_name, array):
     keyboard_name.add_button(array[-1], VkKeyboardColor.NEGATIVE if array != k_main_menu else VkKeyboardColor.DEFAULT)
 
 
+def get_token(filename: str):
+    file = open(filename, "r")
+    token = file.read()
+    file.close()
+    return token
+
+
 main_menu_keyb = VkKeyboard()
 organizations_keyb = VkKeyboard()
 support_keyb = VkKeyboard()
@@ -34,13 +36,17 @@ keyboard_create(organizations_keyb, k_organizations)
 keyboard_create(support_keyb, k_support)
 
 
+bot = vk_api.VkApi(token=get_token("Token.txt"))
+longpolling = VkLongPoll(bot)
+
+
 for event in longpolling.listen():
     if event.type == VkEventType.MESSAGE_NEW and event.to_me:
 
         text_message = event.text.lower()
+        id_random = vk_api.utils.get_random_id()
 
         if text_message in ["start", "начать", "главное меню"]:
-            id_random = vk_api.utils.get_random_id()
             bot.method('messages.send', {
                 'user_id': event.user_id,
                 'message': (message_mm if text_message == "главное меню" else message_welcome),
@@ -48,14 +54,12 @@ for event in longpolling.listen():
                 'random_id': id_random})
 
         elif text_message == "организации":
-            id_random = vk_api.utils.get_random_id()
             bot.method('messages.send', {'user_id': event.user_id,
                                          'message': "Раздел \"Организации\":",
                                          'keyboard': organizations_keyb.get_keyboard(),
                                          'random_id': id_random})
 
         elif text_message == "помощь":
-            id_random = vk_api.utils.get_random_id()
             bot.method('messages.send', {'user_id': event.user_id,
                                          'message': "Раздел \"Помощь\":",
                                          'keyboard': support_keyb.get_keyboard(),
